@@ -4,13 +4,22 @@ import random as rd
 import numpy as np
 
 class GINencoder(nn.Module):
-    def __init__(self, feats_in: int = None, feats_out: int = None, dropout: float = 0.5, residual: bool = False):
+    def __init__(self, feats_in: int = None, 
+                 feats_out: int = None,
+                 dropout: float = 0.5,
+                 residual: bool = False,
+                 encoder_type: str = 'encoder'):
+        
         super(GINencoder, self).__init__()
 
-        self.feats_in = feats_in
-        self.feats_out = feats_out
         self.dropout = dropout
         self.residual = residual
+        self.encoder_type = encoder_type
+        self.feats_in = feats_in
+        self.feats_out = feats_out
+
+        if encoder_type not in ['encoder', 'decoder']:
+            raise ValueError("encoder_type must be either 'encoder' or 'decoder'")
 
         self.mlp = nn.Sequential(
             nn.Linear(feats_in, feats_out),
@@ -49,6 +58,7 @@ class GINencoder(nn.Module):
         return rst
 
 class GraphMae(nn.Module):
+
     def __init__(self, feats_in: int = None, feats_out: int = None, mask_rate: float = 0.5, replace_rate: float = 0.1):
         super(GraphMae, self).__init__()
 
@@ -58,6 +68,25 @@ class GraphMae(nn.Module):
         self.replace_rate = replace_rate
         self.mask_token_rate = mask_rate - replace_rate
         self.enc_mask_token = nn.Parameter(torch.zeros(1, feats_in))
+
+        self.enc_layers, self.dec_layers = self._build_coders(feats_in, feats_out)
+
+    def _build_coders(self, feats_in: int, feats_out: int, num_enc_layers: int = 5, num_dec_layers: int = 5, dropout: float = 0.5, residual: bool = False):
+        # Build encoder layers
+        enc_layers = []
+        for i in range(num_enc_layers):
+            in_dim = feats_in if i == 0 else feats_out
+            out_dim = feats_out
+            enc_layers.append(GINencoder(in_dim, out_dim, dropout=dropout, residual=residual, encoder_type='encoder'))
+
+        # Build decoder layers
+        dec_layers = []
+        for i in range(num_dec_layers):
+            in_dim = feats_out
+            out_dim = feats_in if i == num_dec_layers - 1 else feats_out
+            dec_layers.append(GINencoder(in_dim, out_dim, dropout=dropout, residual=residual, encoder_type='decoder'))
+
+        return nn.ModuleList(enc_layers), nn.ModuleList(dec_layers)
 
     def random_masking(self, adj: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
         
@@ -75,12 +104,6 @@ class GraphMae(nn.Module):
 
         perm_nodes = torch.randperm(num_nodes, device=device)
         num_mask_nodes = int(self.mask_rate * num_nodes)
-
-        if num_mask_nodes == 0:
-            # nothing to mask
-            mask = torch.zeros(num_nodes, dtype=torch.bool, device=device)
-            replace_idx = torch.zeros(num_nodes, dtype=torch.bool, device=device)
-            return x.clone(), mask, replace_idx
 
         mask_idx = perm_nodes[: num_mask_nodes]
         keep_idx = perm_nodes[num_mask_nodes: ]
@@ -119,6 +142,43 @@ class GraphMae(nn.Module):
             replace_idx[noise_idx] = True
 
         return out_x, mask, replace_idx
+    
+    def encode(self, adj: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        h = x
+        for layer in self.enc_layers:
+            h = layer(adj, h)
 
+        return h
 
+    def decode(self, adj: torch.Tensor, h: torch.Tensor) -> torch.Tensor:
+        x_ = h
+        for layer in self.dec_layers:
+            x_ = layer(adj, x_)
+            
+        return x_
 
+    def forward(self, adj: torch.Tensor, x: torch.Tensor) -> tuple:
+
+        # ---- attribute reconstruction ----
+        loss = self.mask_attr_prediction(adj, x)
+        loss_item = {"loss": loss.item()}
+        return loss, loss_item
+
+    def mask_attr_prediction(self, adj: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+
+        #  Mask node features and predict them.
+
+        
+    
+        # 1. Encode
+        h = self.encode(adj, x)
+
+        # 2. Randomly mask node features
+        out_h, mask, replace_idx = self.random_masking(adj, h)
+
+        # 3. Decode
+        out_x = self.decode(adj, out_h)
+
+        # 4. Compute loss (L1 reconstruction loss)
+        loss = F.l1_loss(out_x[mask], x[mask])
+        return loss
