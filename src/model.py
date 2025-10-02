@@ -160,20 +160,24 @@ class GraphMae(nn.Module):
     def mask_attr_prediction(self, adj: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
 
         #  Mask node features and predict them.
+        x_w_mask, mask_idx = self.random_masking(adj, x, self.mask_rate) 
 
+        # Encode
+        h = self.encode(adj, x_w_mask)
 
+        # Mask hidden representations of masked nodes
+        h[mask_idx] = 0
 
+        # Decode
+        out_x = self.decode(adj, h)
 
-    
-        # 1. Encode
-        h = self.encode(adj, x)
+        x_init = x[mask_idx]
+        x_rec = out_x[mask_idx]
 
-        # 2. Randomly mask node features
-        out_h, mask, replace_idx = self.random_masking(adj, h)
+        assert x_init.shape == x_rec.shape, "Shape mismatch between original and reconstructed features"
 
-        # 3. Decode
-        out_x = self.decode(adj, out_h)
-
-        # 4. Compute loss (L1 reconstruction loss)
-        loss = F.l1_loss(out_x[mask], x[mask])
+        # Compute loss 
+        loss = self.criterion(x_rec, x_init)
         return loss
+    
+ 
