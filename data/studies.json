@@ -1,0 +1,57 @@
+{
+    "msk_immuno_2019": {
+        "url": "https://cbioportal-datahub.s3.amazonaws.com/tmb_mskcc_2018.tar.gz",
+        "source": "cbioportal",
+        "keywords": ["immunotherapy", "pan-cancer", "msk", "mutations", "fusions", "muts", "inmuno", "pan", "thousands", "patient", "large", "2019"]
+    },
+    "msk_pan_2017": {
+        "url": "https://cbioportal-datahub.s3.amazonaws.com/msk_impact_2017.tar.gz",
+        "source": "cbioportal",
+        "keywords": ["treatments", "pan-cancer", "msk", "pan", "mutations", "fusions", "muts", "thousands", "patient", "large", "2017"]
+    },
+    "ontology_annotations": {
+        "url": "http://geneontology.org/gene-associations/goa_human.gaf.gz",
+        "source": "GO",
+        "keywords": ["annotation", "annot", "ontology", "go", "nodes"]
+    },
+    "ontology_description": {
+        "url": "http://current.geneontology.org/ontology/go-basic.obo",
+        "source": "GO",
+        "keywords": ["annotation", "annot", "ontology", "go", "nodes", "names", "ontology description"]
+    },
+    "reactome_pathways_gene_set": {
+        "url": "https://reactome.org/download/current/ReactomePathways.gmt.zip",
+        "source": "Reactome",
+        "keywords": ["genesets", "sets", "annotation", "annot", "pathways", "reactome", "go", "nodes"]
+    },
+    "reactome_pathways": {
+        "url": "https://reactome.org/download/current/gene_association.reactome.gz",
+        "source": "Reactome",
+        "keywords": ["annotation", "annot", "pathways", "reactome", "go", "nodes"]
+    },
+    "reactome_pathways_names": {
+        "url": "https://reactome.org/download/current/ReactomePathways.txt",
+        "source": "Reactome",
+        "keywords": ["annotation", "pathway names", "pathways", "reactome", "go", "nodes"]
+    },
+    "reactome_reactions": {
+        "url": "https://reactome.org/download/tools/ReatomeFIs/FIsInGene_122921_with_annotations.txt.zip",
+        "source": "Reactome",
+        "keywords": ["annotation", "reactions", "pathways", "reactome", "go", "nodes", "graph"]
+    },
+    "target_all": {
+        "url": "https://cbioportal-datahub.s3.amazonaws.com/aml_target_2018_pub.tar.gz",
+        "source": "cbioportal",
+        "keywords": ["leukemia", "target", "TARGET", "leu", "childhood", "patient", "muts", "meth", "methylation", "exp", "large", "2018"]
+    },
+    "target_all_II": {
+        "url": "https://cbioportal-datahub.s3.amazonaws.com/all_phase2_target_2018_pub.tar.gz",
+        "source": "cbioportal",
+        "keywords": ["leukemia", "target", "TARGET", "leu", "childhood", "patient", "muts", "exp", "meth", "methylation", "large", "2.018"]
+    },
+    "onco_tree": {
+        "url": "http://oncotree.mskcc.org/api/tumor_types.txt",
+        "source": "msk",
+        "keywords": ["annotation", "msk", "onco_tree", "tree", "onco", "cancer types", "clinical"]
+    }
+}

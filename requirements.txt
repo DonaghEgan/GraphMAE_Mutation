@@ -1,0 +1,7 @@
+networkx
+numpy
+scikit-learn
+matplotlib
+pytest
+torch
+torch-geometric
