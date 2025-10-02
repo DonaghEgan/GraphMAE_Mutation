@@ -134,14 +134,7 @@ class GraphMae(nn.Module):
             # expand enc_mask_token to match number of masked rows
             out_x[mask_token_idx] = self.enc_mask_token.expand(mask_token_idx.numel(), -1)
 
-        # boolean masks for callers
-        mask = torch.zeros(num_nodes, dtype=torch.bool, device=device)
-        mask[mask_idx] = True
-        replace_idx = torch.zeros(num_nodes, dtype=torch.bool, device=device)
-        if num_noise_nodes > 0:
-            replace_idx[noise_idx] = True
-
-        return out_x, mask, replace_idx
+        return out_x, mask_idx
     
     def encode(self, adj: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
         h = x
@@ -168,7 +161,9 @@ class GraphMae(nn.Module):
 
         #  Mask node features and predict them.
 
-        
+
+
+
     
         # 1. Encode
         h = self.encode(adj, x)
