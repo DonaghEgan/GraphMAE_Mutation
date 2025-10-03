@@ -1,14 +1,14 @@
 import torch
 from src.model import GraphMae
 
-
 def test_random_masking_basic():
     """Test basic masking functionality: correct shapes and mask rate."""
     torch.manual_seed(0)
+    batch_size = 4
     n = 20
     feats = 5
     adj = torch.eye(n)
-    x = torch.arange(n * feats, dtype=torch.float32).view(n, feats)
+    x = torch.arange(batch_size * n * feats, dtype=torch.float32).view(batch_size, n, feats)
 
     model = GraphMae(feats_in=feats, feats_out=5, mask_rate=0.4, replace_rate=0.1)
 
@@ -30,10 +30,11 @@ def test_random_masking_basic():
 def test_masking_token_replacement():
     """Test that some nodes are replaced with mask token and others with noise."""
     torch.manual_seed(42)
+    batch_size = 2
     n = 100
     feats = 10
     adj = torch.eye(n)
-    x = torch.randn(n, feats)
+    x = torch.randn(batch_size, n, feats)
     
     mask_rate = 0.5
     replace_rate = 0.2  # 20% of masked nodes will be replaced with noise
@@ -48,14 +49,14 @@ def test_masking_token_replacement():
     expected_noise_nodes = int(replace_rate * expected_masked)
     expected_token_nodes = expected_masked - expected_noise_nodes
     
-    # Check which masked nodes have the mask token
+    # Check which masked nodes have the mask token (check first batch)
     # (those that are exactly equal to the mask token)
     mask_token = model.enc_mask_token.squeeze(0)
     nodes_with_token = 0
     nodes_with_noise = 0
     
     for idx in mask_idx:
-        if torch.allclose(out_x[idx], mask_token, atol=1e-6):
+        if torch.allclose(out_x[0, idx], mask_token, atol=1e-6):
             nodes_with_token += 1
         else:
             nodes_with_noise += 1
@@ -73,10 +74,11 @@ def test_masking_token_replacement():
 def test_masking_preserves_unmasked():
     """Test that unmasked nodes remain unchanged."""
     torch.manual_seed(123)
+    batch_size = 3
     n = 30
     feats = 8
     adj = torch.eye(n)
-    x = torch.randn(n, feats)
+    x = torch.randn(batch_size, n, feats)
     x_original = x.clone()
     
     model = GraphMae(feats_in=feats, feats_out=24, mask_rate=0.3, replace_rate=0.1)
@@ -86,23 +88,25 @@ def test_masking_preserves_unmasked():
     # Create a set of masked indices for quick lookup
     masked_set = set(mask_idx.tolist())
     
-    # Check that unmasked nodes are unchanged
+    # Check that unmasked nodes are unchanged (for all batches)
     unchanged_count = 0
-    for i in range(n):
-        if i not in masked_set:
-            assert torch.allclose(out_x[i], x_original[i]), \
-                f"Unmasked node {i} was changed"
-            unchanged_count += 1
+    for b in range(batch_size):
+        for i in range(n):
+            if i not in masked_set:
+                assert torch.allclose(out_x[b, i], x_original[b, i]), \
+                    f"Unmasked node {i} in batch {b} was changed"
+                unchanged_count += 1
     
-    print(f"✓ {unchanged_count}/{n} unmasked nodes preserved correctly")
+    print(f"✓ {unchanged_count}/{n * batch_size} unmasked nodes preserved correctly across batches")
 
 
 def test_masking_deterministic_with_seed():
     """Test that masking is deterministic given the same seed."""
+    batch_size = 2
     n = 25
     feats = 6
     adj = torch.eye(n)
-    x = torch.randn(n, feats)
+    x = torch.randn(batch_size, n, feats)
     
     model = GraphMae(feats_in=feats, feats_out=20, mask_rate=0.4, replace_rate=0.15)
     
@@ -122,10 +126,11 @@ def test_masking_deterministic_with_seed():
 
 def test_edge_cases():
     """Test edge cases like high mask rates."""
+    batch_size = 2
     n = 50
     feats = 4
     adj = torch.eye(n)
-    x = torch.randn(n, feats)
+    x = torch.randn(batch_size, n, feats)
     
     # Test with very high mask rate
     torch.manual_seed(0)
@@ -141,9 +146,9 @@ def test_edge_cases():
     model_no_replace = GraphMae(feats_in=feats, feats_out=16, mask_rate=0.3, replace_rate=0.0)
     out_x, mask_idx = model_no_replace.random_masking(adj, x)
     
-    # All masked nodes should have the mask token
+    # All masked nodes should have the mask token (check first batch)
     mask_token = model_no_replace.enc_mask_token.squeeze(0)
-    all_have_token = all(torch.allclose(out_x[idx], mask_token, atol=1e-6) for idx in mask_idx)
+    all_have_token = all(torch.allclose(out_x[0, idx], mask_token, atol=1e-6) for idx in mask_idx)
     assert all_have_token, "With replace_rate=0, all masked nodes should use mask token"
     
     print(f"✓ Edge cases handled correctly")

@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class DataLoader:
+
     """Handles data loading and preprocessing for the GNN mutation analysis."""
     
     def __init__(self, config: Config):

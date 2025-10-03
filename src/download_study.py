@@ -11,9 +11,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # Get the root directory path (one level up from src/)
 ROOT_DIR = Path(__file__).resolve().parent.parent
-print(ROOT_DIR)
-DEFAULT_TEMP_DIR = ROOT_DIR / 'temp'
-STUDIES_CONFIG_PATH = ROOT_DIR / 'data' / 'studies.json'
+print(f"ROOT_DIR for data download: {ROOT_DIR}")
+DATA_PATH = ROOT_DIR / 'data'
+STUDIES_CONFIG_PATH = DATA_PATH / 'studies.json'
 
 def get_download_directory() -> Path:
     """
@@ -21,7 +21,7 @@ def get_download_directory() -> Path:
     
     :return: Path to the temp directory where files will be downloaded.
     """
-    return DEFAULT_TEMP_DIR
+    return DATA_PATH
 
 def load_studies_config() -> Dict[str, Any]:
     """
@@ -80,6 +80,27 @@ def url_search(name: Optional[str] = None, keywords: Optional[List[str]] = None)
 
     return list(urls), list(sources)
 
+def download_and_extract(url: str, folder: Path, extract_func) -> Path:
+    """
+    Helper function to download and extract a file.
+    
+    :param url: The URL of the file to download.
+    :param folder: The directory to download and extract the file to.
+    :param extract_func: The function to use for extraction (e.g., extract_zip, extract_tar).
+    :return: The path to the extracted file or directory.
+    """
+    path = download_url(url, str(folder))
+    logging.info(f"Extracting {path} to {folder}")
+    extract_func(path, str(folder))
+    # Determine the correct suffix to remove
+    suffix = ''
+    if url.endswith('.zip'):
+        suffix = '.zip'
+    elif url.endswith('.tar.gz'):
+        suffix = '.tar.gz'
+    
+    return Path(path.replace(suffix, ''))
+
 def download_study(name: Optional[str] = None, keywords: Optional[List[str]] = None, folder: Optional[Path] = None) -> Tuple[List[Path], List[str], List[str]]:
     """
     Function to download a file from a URL and extract it.
@@ -117,25 +138,3 @@ def download_study(name: Optional[str] = None, keywords: Optional[List[str]] = N
             logging.error(f"Failed to download or extract {url}: {e}")
 
     return paths, sources, urls
-
-def download_and_extract(url: str, folder: Path, extract_func) -> Path:
-    """
-    Helper function to download and extract a file.
-    
-    :param url: The URL of the file to download.
-    :param folder: The directory to download and extract the file to.
-    :param extract_func: The function to use for extraction (e.g., extract_zip, extract_tar).
-    :return: The path to the extracted file or directory.
-    """
-    path = download_url(url, str(folder))
-    logging.info(f"Extracting {path} to {folder}")
-    extract_func(path, str(folder))
-    # Determine the correct suffix to remove
-    suffix = ''
-    if url.endswith('.zip'):
-        suffix = '.zip'
-    elif url.endswith('.tar.gz'):
-        suffix = '.tar.gz'
-    
-    return Path(path.replace(suffix, ''))
-
