@@ -10,10 +10,10 @@ import logging
 from typing import Tuple, Dict, Any, List
 import gc
 
-import process_data as prc
-import utility_functions as uf
-import download_study as ds
-import read_specific as rs
+from . import process_data as prc
+from . import utility_functions as uf
+from . import download_study as ds
+from . import read_specific as rs
 from config import Config
 
 
@@ -307,4 +307,4 @@ def load_data(config: Config) -> Tuple[DataLoader, torch.Tensor, torch.Tensor, t
     data_loader = DataLoader(config)
     tensors = data_loader.load_all_data()
     
-    return data_loader, *tensors
+    data_loader, *tensors

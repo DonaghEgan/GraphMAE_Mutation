@@ -12,11 +12,11 @@ from typing import Optional, List
 class ModelConfig:
     """Model architecture configuration."""
     feats_in: int = 48
-    feats_out: int = 64
+    feats_out: int = 128
     dropout: float = 0.5
     residual: bool = True
-    mask_rate: float = 0.5
-    replace_rate: float = 0.1
+    mask_rate: float = 0.3
+    replace_rate: float = 0.05
     loss_fn: str = 'sce'  # Options: 'mse', 'sce'
     alpha: int = 2
     
@@ -25,10 +25,9 @@ class TrainingConfig:
     """Training configuration."""
     epochs: int = 500
     batch_size: int = 32
-    learning_rate: float = 1e-3
-    weight_decay: float = 1e-4
+    learning_rate: float = 0.00015
+    weight_decay: float = 2e-4
     early_stopping_patience: int = 50
-    use_combined_loss: bool = True
     gradient_clip_norm: float = 1.0
 
     # Learning rate scheduler
@@ -49,22 +48,11 @@ class PathConfig:
     """Path configuration."""
     project_root: str = "/home/degan/GraphMAE_Mutation"
     results_dir: str = "results"
-    training_outputs_dir: str = "results"
-    models_dir: str = "results"
     
     @property
     def results_path(self) -> str:
         return os.path.join(self.project_root, self.results_dir)
-    
-    @property
-    def training_outputs_path(self) -> str:
-        return os.path.join(self.results_path, self.training_outputs_dir)
    
-    @property
-    def models_path(self) -> str:
-        return os.path.join(self.results_path, self.models_dir)
-
-
 @dataclass
 class Config:
     """Main configuration class combining all sub-configurations."""
@@ -95,8 +83,6 @@ class Config:
         """Create necessary directories if they don't exist."""
         directories = [
             self.paths.results_path,
-            self.paths.training_outputs_path,
-            self.paths.models_path
         ]
         
         for directory in directories:
@@ -105,7 +91,6 @@ class Config:
    
     def get_results_filename(self, base_name: str, timestamp: str, extension: str = "csv") -> str:
         """Generate filename for results with embedding suffix."""
-        suffix = self.get_model_suffix()
         return f"{base_name}_{timestamp}.{extension}"
 
 def load_config(config_path: Optional[str] = None) -> Config:

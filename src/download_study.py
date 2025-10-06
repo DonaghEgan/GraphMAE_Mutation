@@ -89,15 +89,26 @@ def download_and_extract(url: str, folder: Path, extract_func) -> Path:
     :param extract_func: The function to use for extraction (e.g., extract_zip, extract_tar).
     :return: The path to the extracted file or directory.
     """
-    path = download_url(url, str(folder))
-    logging.info(f"Extracting {path} to {folder}")
-    extract_func(path, str(folder))
-    # Determine the correct suffix to remove
+    # Determine the correct suffix to remove and expected extracted path
     suffix = ''
     if url.endswith('.zip'):
         suffix = '.zip'
     elif url.endswith('.tar.gz'):
         suffix = '.tar.gz'
+    
+    # Determine expected extracted directory name from URL
+    filename = Path(url).name
+    extracted_name = filename.replace(suffix, '')
+    expected_path = folder / extracted_name
+    
+    # Check if already extracted
+    if expected_path.exists():
+        logging.info(f"Study already exists at {expected_path}, skipping download")
+        return expected_path
+    
+    path = download_url(url, str(folder))
+    logging.info(f"Extracting {path} to {folder}")
+    extract_func(path, str(folder))
     
     return Path(path.replace(suffix, ''))
 
@@ -120,18 +131,35 @@ def download_study(name: Optional[str] = None, keywords: Optional[List[str]] = N
 
     for url in urls:
         try:
-            logging.info(f"Downloading from {url}")
+            logging.info(f"Processing {url}")
             if url.endswith('.zip'):
                 paths.append(download_and_extract(url, folder, extract_zip))
             elif url.endswith('.tar.gz'):
                 paths.append(download_and_extract(url, folder, extract_tar))
             elif url.endswith('.gz'):
-                path = download_url(url, str(folder))
-                extract_gz(path, str(folder))
-                paths.append(Path(path).with_suffix(''))
+                filename = Path(url).name
+                extracted_name = filename.replace('.gz', '')
+                expected_path = folder / extracted_name
+                
+                # Check if already extracted
+                if expected_path.exists():
+                    logging.info(f"File already exists at {expected_path}, skipping download")
+                    paths.append(expected_path)
+                else:
+                    path = download_url(url, str(folder))
+                    extract_gz(path, str(folder))
+                    paths.append(Path(path).with_suffix(''))
             elif url.endswith('.txt') or url.endswith('.obo'):
-                path = download_url(url, str(folder))
-                paths.append(Path(path))
+                filename = Path(url).name
+                expected_path = folder / filename
+                
+                # Check if file already exists
+                if expected_path.exists():
+                    logging.info(f"File already exists at {expected_path}, skipping download")
+                    paths.append(expected_path)
+                else:
+                    path = download_url(url, str(folder))
+                    paths.append(Path(path))
             else:
                 logging.warning(f"Unsupported file type for URL: {url}")
         except Exception as e:

@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import re
-import download_study as dd
+from . import download_study as dd
 import csv
 from typing import List, Dict, Tuple, Optional, Union, Any
 import math
@@ -307,8 +307,8 @@ def process_sample(clin_dict: Dict[str, Dict[str, List[str]]], sample_index : Di
             # Create textual representation
             text = template.format(**row_dict)
         
-            # Encode
-            embedding = model.encode(text).tolist()
+            # Encode (disable progress bar to avoid cluttering output)
+            embedding = model.encode(text, show_progress_bar=False).tolist()
             # Get sample idx
             sample_idx = sample_index[row[head_sample['SAMPLE_ID']]]
             ucec_code = row[head_sample['ONCOTREE_CODE']]
@@ -428,9 +428,9 @@ def calc_gene_muts(clin_dict: Dict[str, Dict[str, List[str]]]) -> Dict[str, Unio
         })
 
     try:
-        # Create figures directory if it doesn't exist
-        figures_dir = "/home/degan/Graph_Neural_Network_Mutation_Data/results/figures"
-        os.makedirs(figures_dir, exist_ok=True)
+        # Create results directory if it doesn't exist
+        results_dir = "/home/degan/GraphMAE_Mutation/results"
+        os.makedirs(results_dir, exist_ok=True)
 
         # Create figure with 2 subplots
         fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
@@ -454,7 +454,7 @@ def calc_gene_muts(clin_dict: Dict[str, Dict[str, List[str]]]) -> Dict[str, Unio
         plt.tight_layout()
 
         # Save without timestamp
-        plot_path = os.path.join(figures_dir, f'density_separate_muts_sv.png')
+        plot_path = os.path.join(results_dir, f'density_separate_muts_sv.png')
         plt.savefig(plot_path, dpi=300, bbox_inches='tight')
         logger.info(f"Mutation density plot saved to: {plot_path}")
         plt.close()  # Close figure to free memory
@@ -744,7 +744,7 @@ def read_files(path):
     os_array, clin_array, samples_index = process_clin(data_unified)
     sample_meta = process_sample(data_unified, samples_index)
     gene_index = create_gene_list(data_unified)
-    calc_gene_muts(data_unified) # output saved in figures -> exploratory
+    calc_gene_muts(data_unified) # output saved in results -> exploratory
     mutation_dict = process_mutations(data_unified, samples_index, gene_index)
     sv_dict = process_sv(data_unified, samples_index, gene_index)
     cna_dict = process_cna(data_unified, samples_index, gene_index)

@@ -125,11 +125,14 @@ class ModelTrainer:
         num_batches = 0
         
         try:
+            adj_matrix = adj_matrix.to(self.device)  # ✅ Move once
             for batch in train_data_loader:
                 # Move batch to device
-                # Assuming batch contains node features with shape [B, G, F]
-                x = batch.to(self.device)
-                adj_matrix = adj_matrix.to(self.device)
+                # Unpack batch tuple from TensorDataset
+                if isinstance(batch, (tuple, list)):
+                    x = batch[0].to(self.device)
+                else:
+                    x = batch.to(self.device)
                 num_batches += 1
                 
                 # Zero gradients
@@ -188,10 +191,14 @@ class ModelTrainer:
         
         try:
             with torch.no_grad():
+                adj_matrix = adj_matrix.to(self.device)  # Move once
                 for batch in val_data_loader:
                     # Move batch to device
-                    x = batch.to(self.device)
-                    adj_matrix = adj_matrix.to(self.device)
+                    # Unpack batch tuple from TensorDataset
+                    if isinstance(batch, (tuple, list)):
+                        x = batch[0].to(self.device)
+                    else:
+                        x = batch.to(self.device)
                     num_batches += 1
                     
                     # Forward pass
@@ -254,7 +261,7 @@ class ModelTrainer:
                 current_lr = self.scheduler.get_last_lr()[0]
                 
                 # Print progress
-                if epoch % 10 == 0 or epoch == 1:
+                if epoch % 5 == 0 or epoch == 1:
                     logger.info(f"Epoch {epoch}/{self.config.training.epochs} - "
                               f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, "
                               f"LR: {current_lr:.6f}")
@@ -323,9 +330,9 @@ class ModelTrainer:
         """
         import os
         
-        checkpoint_path = os.path.join(self.config.paths.models_path, filename)
-        os.makedirs(self.config.paths.models_path, exist_ok=True)
-        
+        checkpoint_path = os.path.join(self.config.paths.results_path, filename)
+        os.makedirs(self.config.paths.results_path, exist_ok=True)
+
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
@@ -347,7 +354,7 @@ class ModelTrainer:
         """
         import os
         
-        checkpoint_path = os.path.join(self.config.paths.models_path, filename)
+        checkpoint_path = os.path.join(self.config.paths.results_path, filename)
         
         if not os.path.exists(checkpoint_path):
             logger.warning(f"Checkpoint {checkpoint_path} not found!")
@@ -390,7 +397,11 @@ class ModelTrainer:
         try:
             with torch.no_grad():
                 for batch in data_loader:
-                    x = batch.to(self.device)
+                    # Unpack batch tuple from TensorDataset
+                    if isinstance(batch, (tuple, list)):
+                        x = batch[0].to(self.device)
+                    else:
+                        x = batch.to(self.device)
                     adj_matrix = adj_matrix.to(self.device)
                     
                     # Get embeddings using the embed method

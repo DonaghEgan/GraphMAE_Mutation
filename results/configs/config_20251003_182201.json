@@ -1,0 +1,36 @@
+{
+  "model": {
+    "feats_in": 48,
+    "feats_out": 128,
+    "dropout": 0.5,
+    "residual": true,
+    "mask_rate": 0.5,
+    "replace_rate": 0.1,
+    "loss_fn": "sce",
+    "alpha": 2
+  },
+  "training": {
+    "epochs": 500,
+    "batch_size": 32,
+    "learning_rate": 0.0005,
+    "weight_decay": 0.0002,
+    "early_stopping_patience": 50,
+    "gradient_clip_norm": 1.0,
+    "scheduler_T_max": 50,
+    "scheduler_eta_min": 1e-06
+  },
+  "data": {
+    "study_name": "msk_pan_2017",
+    "train_split": 0.8,
+    "val_split": 0.1,
+    "test_split": 0.1,
+    "random_seed": 3
+  },
+  "paths": {
+    "project_root": "/home/degan/GraphMAE_Mutation",
+    "results_dir": "results"
+  },
+  "device_preference": "cuda",
+  "log_level": "INFO",
+  "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+}
